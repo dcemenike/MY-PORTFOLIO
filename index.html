@@ -1,0 +1,2371 @@
+<!DOCTYPE html>
+<!--
+  ════════════════════════════════════════════════════════════════
+  ✏️  HOW TO EDIT THIS FILE — READ ME FIRST
+  ════════════════════════════════════════════════════════════════
+  All of your personal content lives in ONE place: search this file
+  for "EDIT ME" (Ctrl/Cmd+F) and you'll land on every spot that
+  needs your real info, in order, top to bottom.
+
+  Anything wrapped in [square brackets] is a placeholder — replace
+  the bracketed text only, keep the surrounding code as-is.
+
+  The main block to fill in is the JavaScript object called
+  "appContent" — search for:      const appContent = {
+  That's your About / Projects / Skills / Experience / Contact text,
+  all in one contiguous place.
+
+  You do NOT need to touch anything below "appOrder" — that's the
+  functional code (window dragging, boot sequence, cursor, the
+  reptile + cube widgets). Editing above that line is all it takes.
+  ════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- EDIT ME: your name, shown as the browser tab title -->
+  <title>Daniel Emenike :: Portfolio OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    /* ============ TOKENS ============ */
+    :root {
+      --bg-void: #05070a;
+      --bg-panel: #0d1420;
+      --bg-panel-2: #111b2b;
+      --bg-panel-3: #0a1119;
+      --border-dim: rgba(77, 216, 230, 0.18);
+      --border-bright: rgba(77, 216, 230, 0.5);
+      --accent-cyan: #4dd8e6;
+      --accent-cyan-dim: rgba(77, 216, 230, 0.35);
+      --accent-cyan-glow: rgba(77, 216, 230, 0.25);
+      --accent-amber: #f5a623;
+      --accent-amber-soft: rgba(245, 166, 35, 0.16);
+      --accent-amber-glow: rgba(245, 166, 35, 0.45);
+      --text-primary: #dce8ee;
+      --text-dim: #6b8a99;
+      --text-faint: #3d5560;
+      --danger: #f5615f;
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection {
+      background: var(--accent-cyan-dim);
+      color: #fff;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    a {
+      color: var(--accent-cyan);
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 2px;
+    }
+
+    /* ambient texture, kept very quiet on purpose */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(to bottom, rgba(77, 216, 230, 0.025) 0px, rgba(77, 216, 230, 0.025) 1px,
+          transparent 1px, transparent 3px);
+      mix-blend-mode: screen;
+    }
+
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(77, 216, 230, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(77, 216, 230, 0.05) 1px, transparent 1px);
+      background-size: 42px 42px;
+      -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 90%);
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 90%);
+    }
+
+    /* ============ BOOT SCREEN ============ */
+    #boot-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: var(--bg-void);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: clip-path .65s cubic-bezier(.76, 0, .24, 1), opacity .5s ease .1s;
+    }
+
+    #boot-screen.wipe {
+      clip-path: inset(0 0 100% 0);
+      opacity: 0;
+    }
+
+    #boot-screen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    .boot-inner {
+      width: min(640px, 88vw);
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .boot-log {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.9;
+      color: var(--accent-cyan);
+      min-height: 150px;
+      white-space: pre-wrap;
+    }
+
+    .boot-log .dim {
+      color: var(--text-faint);
+    }
+
+    .boot-log .ok {
+      color: #7be08a;
+    }
+
+    .caret {
+      display: inline-block;
+      width: 7px;
+      height: 14px;
+      background: var(--accent-cyan);
+      vertical-align: -2px;
+      animation: blink 1s steps(1) infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .boot-stage {
+      position: relative;
+      height: 120px;
+      border: 1px solid var(--border-dim);
+      border-radius: 6px;
+      background: var(--bg-panel-3);
+      overflow: hidden;
+    }
+
+    .boot-stage .b-nav {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      height: 8px;
+      width: 0%;
+      background: var(--accent-cyan);
+      border-radius: 2px;
+      animation: growW .5s ease forwards;
+      animation-delay: .9s;
+    }
+
+    .boot-stage .b-side {
+      position: absolute;
+      top: 34px;
+      left: 14px;
+      bottom: 14px;
+      width: 26px;
+      background: var(--accent-amber-soft);
+      border: 1px solid var(--accent-amber);
+      opacity: 0;
+      transform: scaleY(0);
+      transform-origin: top;
+      animation: growH .35s ease forwards;
+      animation-delay: 1.5s;
+    }
+
+    .boot-stage .b-card {
+      position: absolute;
+      top: 34px;
+      height: 44px;
+      width: 60px;
+      border: 1px solid var(--border-bright);
+      border-radius: 4px;
+      background: rgba(77, 216, 230, 0.06);
+      opacity: 0;
+      transform: translateY(6px);
+      animation: popIn .35s ease forwards;
+    }
+
+    .boot-stage .b-card:nth-child(3) {
+      left: 56px;
+      animation-delay: 1.8s;
+    }
+
+    .boot-stage .b-card:nth-child(4) {
+      left: 126px;
+      animation-delay: 1.98s;
+    }
+
+    .boot-stage .b-card:nth-child(5) {
+      left: 196px;
+      animation-delay: 2.16s;
+    }
+
+    .boot-stage .b-card:nth-child(6) {
+      left: 266px;
+      animation-delay: 2.34s;
+    }
+
+    @keyframes growW {
+      to {
+        width: calc(100% - 28px);
+      }
+    }
+
+    @keyframes growH {
+      to {
+        opacity: 1;
+        transform: scaleY(1);
+      }
+    }
+
+    @keyframes popIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .boot-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-faint);
+      letter-spacing: .06em;
+    }
+
+    #skip-boot {
+      background: transparent;
+      border: 1px solid var(--border-dim);
+      color: var(--text-dim);
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      letter-spacing: .06em;
+      transition: .2s;
+    }
+
+    #skip-boot:hover {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #boot-screen {
+        transition: opacity .3s ease;
+      }
+
+      .boot-stage * {
+        animation-duration: .01s !important;
+        animation-delay: 0s !important;
+      }
+    }
+
+    /* ============ DESKTOP ============ */
+    #desktop {
+      position: fixed;
+      inset: 0;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .5s ease;
+    }
+
+    #desktop.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #topbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 34px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: rgba(13, 20, 32, 0.7);
+      border-bottom: 1px solid var(--border-dim);
+      backdrop-filter: blur(6px);
+      font-size: 11.5px;
+      letter-spacing: .05em;
+      color: var(--text-dim);
+    }
+
+    #topbar .brand {
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    .status-group {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #7be08a;
+      display: inline-block;
+      margin-right: 6px;
+      box-shadow: 0 0 6px #7be08a;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: .4;
+      }
+    }
+
+    #icon-grid {
+      position: absolute;
+      top: 56px;
+      left: 20px;
+      right: 20px;
+      bottom: 64px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 96px);
+      grid-auto-rows: 104px;
+      gap: 6px;
+      align-content: start;
+    }
+
+    .folder-icon {
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 4px;
+      color: var(--text-primary);
+      transition: .15s ease;
+    }
+
+    .folder-icon:hover,
+    .folder-icon:focus-visible {
+      background: rgba(245, 166, 35, 0.08);
+      border-color: var(--accent-amber-glow);
+    }
+
+    .folder-icon .icon-box {
+      width: 46px;
+      height: 38px;
+      position: relative;
+    }
+
+    .folder-icon .icon-box svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 6px var(--accent-amber-glow));
+    }
+
+    .folder-icon .glyph {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bg-void);
+    }
+
+    .folder-icon .label {
+      font-size: 11.5px;
+      letter-spacing: .03em;
+      text-align: center;
+      color: var(--text-primary);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
+    }
+
+    /* ============ WINDOWS ============ */
+    #windows-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+    }
+
+    .window {
+      position: absolute;
+      min-width: 280px;
+      min-height: 200px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .55), 0 0 0 1px rgba(0, 0, 0, .4);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: winOpen .18s ease;
+    }
+
+    @keyframes winOpen {
+      from {
+        opacity: 0;
+        transform: scale(.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .window.minimized {
+      display: none;
+    }
+
+    .window.focused {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .6), 0 0 0 1px var(--accent-cyan-dim), 0 0 24px var(--accent-cyan-glow);
+    }
+
+    .window-titlebar {
+      height: 36px;
+      flex: 0 0 auto;
+      background: var(--bg-panel-2);
+      border-bottom: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 6px 0 12px;
+      cursor: grab;
+      user-select: none;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .window-titlebar:active {
+      cursor: grabbing;
+    }
+
+    .window-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .window-title .path-prefix {
+      color: var(--text-faint);
+      font-family: var(--font-mono);
+      font-weight: 400;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 6px;
+    }
+
+    .win-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 1px solid var(--border-dim);
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 12px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: .15s;
+    }
+
+    .win-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--border-bright);
+    }
+
+    .win-btn.close:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+      background: rgba(245, 97, 95, 0.1);
+    }
+
+    .window-body {
+      flex: 1 1 auto;
+      overflow: auto;
+      padding: 22px 24px;
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--text-primary);
+    }
+
+    .window-body::-webkit-scrollbar {
+      width: 9px;
+    }
+
+    .window-body::-webkit-scrollbar-thumb {
+      background: var(--bg-panel-2);
+      border-radius: 6px;
+      border: 2px solid var(--bg-panel);
+    }
+
+    .resize-handle {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 16px;
+      height: 16px;
+      cursor: nwse-resize;
+      background: linear-gradient(135deg, transparent 50%, var(--border-dim) 50%);
+    }
+
+    /* window content typography helpers */
+    .win-h1 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--accent-cyan);
+      margin-bottom: 14px;
+      letter-spacing: .01em;
+    }
+
+    .win-eyebrow {
+      font-size: 10.5px;
+      letter-spacing: .14em;
+      color: var(--accent-amber);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .win-p {
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+
+    .win-p strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .placeholder {
+      color: var(--accent-amber);
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      border: 1px solid var(--border-dim);
+      color: var(--accent-cyan);
+      margin: 0 6px 6px 0;
+    }
+
+    .skill-group {
+      margin-bottom: 18px;
+    }
+
+    .skill-group h3 {
+      font-family: var(--font-display);
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .proj-card {
+      border: 1px solid var(--border-dim);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      transition: .15s;
+    }
+
+    .proj-card:hover {
+      border-color: var(--border-bright);
+      background: rgba(77, 216, 230, 0.03);
+    }
+
+    .proj-card h3 {
+      font-family: var(--font-display);
+      font-size: 14.5px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .proj-card p {
+      color: var(--text-dim);
+      font-size: 12.5px;
+      margin-bottom: 10px;
+    }
+
+    .tl-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .tl-date {
+      flex: 0 0 90px;
+      color: var(--accent-amber);
+      font-size: 11.5px;
+      padding-top: 2px;
+    }
+
+    .tl-body h3 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+
+    .tl-body .role-sub {
+      color: var(--text-faint);
+      font-size: 11.5px;
+      margin-bottom: 6px;
+    }
+
+    .tl-body p {
+      color: var(--text-dim);
+      font-size: 12.5px;
+    }
+
+    .contact-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border-dim);
+      border-radius: 6px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 13px;
+      transition: .15s;
+    }
+
+    .contact-line:hover {
+      border-color: var(--accent-amber);
+      background: var(--accent-amber-soft);
+    }
+
+    .contact-line .prompt {
+      color: var(--accent-cyan);
+    }
+
+    /* ============ TASKBAR ============ */
+    #taskbar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 52px;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      background: rgba(13, 20, 32, 0.8);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border-dim);
+    }
+
+    #start-btn {
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-bright);
+      background: var(--accent-cyan-glow);
+      color: var(--accent-cyan);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 12.5px;
+      letter-spacing: .03em;
+    }
+
+    #start-btn:hover {
+      background: var(--accent-cyan-dim);
+    }
+
+    #task-pills {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+      overflow-x: auto;
+    }
+
+    .task-pill {
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-dim);
+      background: var(--bg-panel-2);
+      color: var(--text-dim);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .task-pill.active {
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan-dim);
+    }
+
+    #tb-clock {
+      color: var(--text-dim);
+      font-size: 12px;
+      padding: 0 6px;
+    }
+
+    #start-menu {
+      position: absolute;
+      bottom: 60px;
+      left: 12px;
+      z-index: 70;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      padding: 8px;
+      width: 190px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .5);
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    #start-menu.open {
+      display: flex;
+    }
+
+    #start-menu button {
+      text-align: left;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      padding: 9px 10px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-family: var(--font-mono);
+    }
+
+    #start-menu button:hover {
+      background: var(--accent-amber-soft);
+      color: var(--accent-amber);
+    }
+
+    /* ============ MOBILE ============ */
+    @media (max-width:720px) {
+      #icon-grid {
+        grid-template-columns: repeat(auto-fill, 78px);
+        grid-auto-rows: 90px;
+        top: 44px;
+      }
+
+      .folder-icon .icon-box {
+        width: 38px;
+        height: 32px;
+      }
+
+      .window {
+        left: 0 !important;
+        top: 44px !important;
+        right: 0;
+        bottom: 52px;
+        width: 100% !important;
+        height: calc(100% - 96px) !important;
+        border-radius: 0;
+      }
+
+      .resize-handle {
+        display: none;
+      }
+
+      .boot-log {
+        font-size: 12px;
+      }
+    }
+
+    /* ============ CUSTOM CURSOR ============ */
+    #cursor-dot,
+    #cursor-ring {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 99999;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity .25s ease;
+    }
+
+    html.cursor-ready #cursor-dot,
+    html.cursor-ready #cursor-ring {
+      opacity: 1;
+    }
+
+    html.is-touch #cursor-dot,
+    html.is-touch #cursor-ring {
+      display: none !important;
+    }
+
+    #cursor-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 6px var(--accent-cyan);
+    }
+
+    #cursor-ring {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--accent-cyan-dim);
+      transition: width .15s ease, height .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    #cursor-ring::before,
+    #cursor-ring::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      background: var(--accent-cyan-dim);
+    }
+
+    #cursor-ring::before {
+      width: 8px;
+      height: 1px;
+      transform: translate(-50%, -50%);
+    }
+
+    #cursor-ring::after {
+      width: 1px;
+      height: 8px;
+      transform: translate(-50%, -50%);
+    }
+
+    #cursor-ring.hover {
+      width: 40px;
+      height: 40px;
+      border-color: var(--accent-amber);
+      background: rgba(245, 166, 35, 0.08);
+    }
+
+    #cursor-ring.down {
+      width: 20px;
+      height: 20px;
+      border-color: var(--accent-amber);
+    }
+
+    /* ============ HUD CORNER BRACKETS ============ */
+    .hud-corners {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .hud-corner {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid var(--accent-cyan);
+      opacity: .65;
+    }
+
+    .hud-corner.tl {
+      top: -1px;
+      left: -1px;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .hud-corner.tr {
+      top: -1px;
+      right: -1px;
+      border-left: none;
+      border-bottom: none;
+    }
+
+    .hud-corner.bl {
+      bottom: -1px;
+      left: -1px;
+      border-right: none;
+      border-top: none;
+    }
+
+    .hud-corner.br {
+      bottom: -1px;
+      right: -1px;
+      border-left: none;
+      border-top: none;
+    }
+
+    .boot-inner {
+      position: relative;
+      padding: 26px;
+    }
+
+    /* ============ RADAR SWEEP (behind desktop icons) ============ */
+    #radar-sweep {
+      position: absolute;
+      top: 34px;
+      left: 0;
+      right: 0;
+      bottom: 52px;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: .5;
+    }
+
+    #radar-sweep::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1400px;
+      height: 1400px;
+      margin: -700px 0 0 -700px;
+      background: conic-gradient(from 0deg, rgba(77, 216, 230, 0.09), transparent 18%, transparent 100%);
+      animation: sweep 9s linear infinite;
+    }
+
+    @keyframes sweep {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #icon-grid,
+    #windows-layer {
+      z-index: 3;
+    }
+
+    /* ============ TOPBAR HUD STATS ============ */
+    .hud-stat {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text-faint);
+    }
+
+    .hud-stat b {
+      color: var(--accent-cyan);
+      font-weight: 500;
+    }
+
+    .hud-bars {
+      display: inline-flex;
+      gap: 2px;
+      align-items: flex-end;
+      height: 9px;
+    }
+
+    .hud-bars span {
+      width: 2px;
+      background: var(--accent-cyan);
+      opacity: .5;
+      animation: barpulse 1.6s ease-in-out infinite;
+    }
+
+    .hud-bars span:nth-child(1) {
+      height: 40%;
+      animation-delay: 0s;
+    }
+
+    .hud-bars span:nth-child(2) {
+      height: 80%;
+      animation-delay: .2s;
+    }
+
+    .hud-bars span:nth-child(3) {
+      height: 55%;
+      animation-delay: .4s;
+    }
+
+    .hud-bars span:nth-child(4) {
+      height: 95%;
+      animation-delay: .6s;
+    }
+
+    @keyframes barpulse {
+
+      0%,
+      100% {
+        opacity: .35;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    /* ============ BOOT GLITCH ============ */
+    #boot-screen.glitch {
+      animation: glitchShift .12s steps(2) 1;
+    }
+
+    @keyframes glitchShift {
+      0% {
+        transform: translate(0, 0);
+        filter: none;
+      }
+
+      30% {
+        transform: translate(-2px, 1px);
+        filter: hue-rotate(20deg);
+      }
+
+      60% {
+        transform: translate(2px, -1px);
+        filter: hue-rotate(-20deg);
+      }
+
+      100% {
+        transform: translate(0, 0);
+        filter: none;
+      }
+    }
+
+    #boot-rain {
+      position: absolute;
+      inset: 0;
+      opacity: .5;
+    }
+
+    /* ============ MUTE TOGGLE ============ */
+    #mute-toggle {
+      background: transparent;
+      border: 1px solid var(--border-dim);
+      color: var(--text-dim);
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 20px;
+      letter-spacing: .06em;
+      transition: .2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #mute-toggle:hover {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    /* ============ CRT VIGNETTE ============ */
+    #crt-vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9998;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+    }
+
+    /* focused window animated scan border */
+    .window.focused::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: var(--radius);
+      box-shadow: inset 0 0 0 1px var(--accent-cyan-dim);
+    }
+
+    .window-titlebar {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .window.focused .window-titlebar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 60px;
+      background: linear-gradient(90deg, transparent, rgba(77, 216, 230, 0.18), transparent);
+      animation: titleScan 3.2s linear infinite;
+    }
+
+    @keyframes titleScan {
+      from {
+        left: -80px;
+      }
+
+      to {
+        left: 110%;
+      }
+    }
+
+    /* ============ 3D HOLOGRAM CUBE ============ */
+    #hologram {
+      position: absolute;
+      right: 30px;
+      bottom: 82px;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+    }
+
+    .holo-label {
+      font-size: 10px;
+      letter-spacing: .14em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .holo-label::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent-amber);
+      box-shadow: 0 0 5px var(--accent-amber);
+    }
+
+    .holo-stage {
+      width: 132px;
+      height: 132px;
+      perspective: 640px;
+      filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .5));
+    }
+
+    .holo-stage::after {
+      content: '';
+      position: absolute;
+      margin-top: 118px;
+      width: 132px;
+      height: 14px;
+      background: radial-gradient(ellipse, rgba(77, 216, 230, 0.25), transparent 70%);
+    }
+
+    .cube {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      cursor: grab;
+      touch-action: none;
+      will-change: transform;
+    }
+
+    .cube.dragging {
+      cursor: grabbing;
+    }
+
+    .face {
+      position: absolute;
+      width: 132px;
+      height: 132px;
+      border: 1px solid var(--accent-cyan);
+      background: linear-gradient(160deg, rgba(77, 216, 230, 0.12), rgba(77, 216, 230, 0.03));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      color: var(--accent-cyan);
+      box-shadow: inset 0 0 22px rgba(77, 216, 230, 0.1);
+      backdrop-filter: blur(1px);
+    }
+
+    .face::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 1px solid rgba(77, 216, 230, 0.25);
+      pointer-events: none;
+    }
+
+    .face.front {
+      transform: translateZ(66px);
+    }
+
+    .face.back {
+      transform: rotateY(180deg) translateZ(66px);
+    }
+
+    .face.right {
+      transform: rotateY(90deg) translateZ(66px);
+    }
+
+    .face.left {
+      transform: rotateY(-90deg) translateZ(66px);
+    }
+
+    .face.top {
+      transform: rotateX(90deg) translateZ(66px);
+    }
+
+    .face.bottom {
+      transform: rotateX(-90deg) translateZ(66px);
+    }
+
+    @media (max-width:900px) {
+      #hologram {
+        display: none;
+      }
+    }
+
+    /* ============ LOCK SCREEN ============ */
+    #lock-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      background: var(--bg-void);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: transform .55s cubic-bezier(.76, 0, .24, 1), opacity .5s ease;
+    }
+
+    #lock-screen.unlocking {
+      transform: translateY(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .lock-icon {
+      width: 30px;
+      height: 30px;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 6px var(--accent-cyan-glow));
+    }
+
+    .lock-clock {
+      font-family: var(--font-display);
+      font-size: 52px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: .02em;
+    }
+
+    .lock-date {
+      font-size: 11px;
+      letter-spacing: .16em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .lock-hint {
+      margin-top: 30px;
+      font-size: 11px;
+      letter-spacing: .1em;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      animation: lockPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes lockPulse {
+      50% {
+        opacity: .35;
+      }
+    }
+
+    /* ============ CANVAS APP (reptile) ============ */
+    .window-body.canvas-body {
+      padding: 0;
+      background: #03050a;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #reptile-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .canvas-hint {
+      position: absolute;
+      bottom: 10px;
+      left: 14px;
+      z-index: 2;
+      font-size: 10px;
+      letter-spacing: .08em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="scanlines"></div>
+  <div id="crt-vignette"></div>
+  <div id="cursor-ring"></div>
+  <div id="cursor-dot"></div>
+
+  <!-- ============ BOOT SCREEN ============ -->
+  <div id="boot-screen">
+    <canvas id="boot-rain"></canvas>
+    <div class="grid-bg"></div>
+    <div class="boot-inner">
+      <div class="hud-corners">
+        <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+        <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+      </div>
+      <div class="boot-log" id="boot-log"></div>
+      <div class="boot-stage">
+        <div class="b-nav"></div>
+        <div class="b-side"></div>
+        <div class="b-card"></div>
+        <div class="b-card"></div>
+        <div class="b-card"></div>
+        <div class="b-card"></div>
+      </div>
+      <div class="boot-footer">
+        <span>PORTFOLIO_OS v1.0</span>
+        <div style="display:flex; gap:8px;">
+          <button id="mute-toggle">🔊 SOUND</button>
+          <button id="skip-boot">SKIP INTRO →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LOCK SCREEN ============ -->
+  <div id="lock-screen">
+    <div class="grid-bg"></div>
+    <div class="hud-corners">
+      <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+      <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+    </div>
+    <svg class="lock-icon" viewBox="0 0 24 24" fill="none">
+      <rect x="5" y="11" width="14" height="9" rx="2" stroke="#4dd8e6" stroke-width="1.6" />
+      <path d="M8 11V8a4 4 0 018 0v3" stroke="#4dd8e6" stroke-width="1.6" />
+    </svg>
+    <div class="lock-clock" id="lock-clock">--:--</div>
+    <div class="lock-date" id="lock-date">-- -- --</div>
+    <div class="lock-hint">● click anywhere to unlock</div>
+  </div>
+
+  <!-- ============ DESKTOP ============ -->
+  <div id="desktop">
+    <div id="topbar">
+      <!-- EDIT ME: your name, shown top-left on the desktop -->
+      <div><span class="brand">Daniel Emenike</span>_OS</div>
+      <div class="status-group">
+        <span class="hud-stat">CPU <b id="hud-cpu">—</b></span>
+        <span class="hud-stat">MEM <b id="hud-mem">—</b></span>
+        <span class="hud-stat">SIG <span
+            class="hud-bars"><span></span><span></span><span></span><span></span></span></span>
+        <span><span class="status-dot"></span>ONLINE</span>
+        <span id="tb-clock2"></span>
+      </div>
+    </div>
+    <div id="radar-sweep"></div>
+    <div id="icon-grid"></div>
+
+    <div id="windows-layer"></div>
+
+    <div id="hologram" aria-label="Interactive 3D skills cube, drag to rotate">
+      <div class="holo-stage">
+        <div class="cube" id="skill-cube">
+          <div class="face front">JS</div>
+          <div class="face back">CSS</div>
+          <div class="face right">REACT</div>
+          <div class="face left">NODE</div>
+          <div class="face top">GIT</div>
+          <div class="face bottom">HTML</div>
+        </div>
+      </div>
+      <div class="holo-label">drag to inspect</div>
+    </div>
+
+    <div id="start-menu"></div>
+
+    <div id="taskbar">
+      <button id="start-btn">☰ MENU</button>
+      <div id="task-pills"></div>
+      <div id="tb-clock"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+
+      const reduceMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* ---------------- CUSTOM CURSOR ---------------- */
+      (function initCursor() {
+        const dot = document.getElementById('cursor-dot');
+        const ring = document.getElementById('cursor-ring');
+        let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+        let rx = mx, ry = my;
+        let revealed = false;
+
+        function place(x, y) {
+          mx = x; my = y;
+          dot.style.left = x + 'px'; dot.style.top = y + 'px';
+          if (!revealed) {
+            revealed = true;
+            rx = x; ry = y; // snap ring to avoid a fly-in from the corner
+            ring.style.left = x + 'px'; ring.style.top = y + 'px';
+            document.documentElement.classList.add('cursor-ready');
+          }
+        }
+
+        window.addEventListener('pointermove', e => {
+          if (e.pointerType === 'touch') return;
+          place(e.clientX, e.clientY);
+        }, { passive: true });
+        // fallback for browsers/environments without full pointer event support
+        window.addEventListener('mousemove', e => place(e.clientX, e.clientY), { passive: true });
+
+        window.addEventListener('touchstart', () => {
+          document.documentElement.classList.add('is-touch');
+        }, { passive: true, once: true });
+
+        (function loop() {
+          rx += (mx - rx) * 0.18;
+          ry += (my - ry) * 0.18;
+          ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+          requestAnimationFrame(loop);
+        })();
+        window.addEventListener('mousedown', () => ring.classList.add('down'));
+        window.addEventListener('mouseup', () => ring.classList.remove('down'));
+        document.addEventListener('mouseover', e => {
+          if (e.target.closest('button, a, .folder-icon, .window-titlebar, #skill-cube')) {
+            ring.classList.add('hover');
+          }
+        });
+        document.addEventListener('mouseout', e => {
+          if (e.target.closest('button, a, .folder-icon, .window-titlebar, #skill-cube')) {
+            ring.classList.remove('hover');
+          }
+        });
+      })();
+
+      /* ---------------- HUD CORNER BRACKETS HELPER ---------------- */
+      function addCorners(target) {
+        const wrap = document.createElement('div');
+        wrap.className = 'hud-corners';
+        wrap.innerHTML = `<span class="hud-corner tl"></span><span class="hud-corner tr"></span><span class="hud-corner bl"></span><span class="hud-corner br"></span>`;
+        target.appendChild(wrap);
+      }
+
+      /* ---------------- TOPBAR HUD STATS ---------------- */
+      function randHud() {
+        const cpu = document.getElementById('hud-cpu');
+        const mem = document.getElementById('hud-mem');
+        if (cpu) cpu.textContent = (18 + Math.floor(Math.random() * 35)) + '%';
+        if (mem) mem.textContent = (3.2 + Math.random() * 2.1).toFixed(1) + 'GB';
+      }
+      randHud();
+      setInterval(randHud, 2400);
+
+      /* ---------------- BOOT RAIN (subtle background noise columns) ---------------- */
+      (function bootRain() {
+        if (reduceMotionMQ) return;
+        const canvas = document.getElementById('boot-rain');
+        const ctx = canvas.getContext('2d');
+        function size() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        size(); window.addEventListener('resize', size);
+        const chars = '01アイウカタサ';
+        const fontSize = 13;
+        const cols = Math.floor(window.innerWidth / 26);
+        const drops = new Array(cols).fill(0).map(() => Math.random() * -40);
+        let raf;
+        function draw() {
+          ctx.fillStyle = 'rgba(5,7,10,0.16)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.font = fontSize + 'px JetBrains Mono, monospace';
+          for (let i = 0; i < cols; i++) {
+            const ch = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillStyle = 'rgba(77,216,230,0.14)';
+            ctx.fillText(ch, i * 26, drops[i] * fontSize);
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+          }
+          raf = requestAnimationFrame(draw);
+        }
+        draw();
+        window._stopBootRain = () => cancelAnimationFrame(raf);
+      })();
+
+      /* ---------------- SYNTHESIZED BOOT AUDIO ---------------- */
+      const AudioEngine = (function () {
+        let ctx = null, muted = false, humOsc = null, humGain = null, timers = [];
+        function ensureCtx() {
+          if (!ctx) {
+            try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+          }
+          if (ctx.state === 'suspended') ctx.resume().catch(() => { });
+          return ctx;
+        }
+        function tone(freq, delay, duration, opts) {
+          opts = opts || {};
+          const c = ensureCtx();
+          if (!c || muted) return;
+          const t = c.currentTime + delay / 1000;
+          const osc = c.createOscillator();
+          const gain = c.createGain();
+          osc.type = opts.type || 'sine';
+          osc.frequency.setValueAtTime(freq, t);
+          if (opts.sweepTo) osc.frequency.linearRampToValueAtTime(opts.sweepTo, t + duration / 1000);
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(opts.vol || 0.05, t + 0.03);
+          gain.gain.linearRampToValueAtTime(0, t + duration / 1000);
+          osc.connect(gain); gain.connect(c.destination);
+          osc.start(t); osc.stop(t + duration / 1000 + 0.05);
+        }
+        function schedule(fn, delay) { timers.push(setTimeout(fn, delay)); }
+        function startHum(totalMs) {
+          const c = ensureCtx();
+          if (!c || muted) return;
+          humOsc = c.createOscillator(); humGain = c.createGain();
+          humOsc.type = 'sine';
+          humOsc.frequency.setValueAtTime(60, c.currentTime);
+          humOsc.frequency.linearRampToValueAtTime(140, c.currentTime + totalMs / 1000);
+          humGain.gain.setValueAtTime(0, c.currentTime);
+          humGain.gain.linearRampToValueAtTime(0.025, c.currentTime + 0.4);
+          humGain.gain.setValueAtTime(0.025, c.currentTime + totalMs / 1000 - 0.3);
+          humGain.gain.linearRampToValueAtTime(0, c.currentTime + totalMs / 1000);
+          humOsc.connect(humGain); humGain.connect(c.destination);
+          humOsc.start();
+          humOsc.stop(c.currentTime + totalMs / 1000 + 0.1);
+        }
+        function playBootSequence(totalMs) {
+          if (muted) return;
+          startHum(totalMs);
+          schedule(() => tone(520, 0, 90, { vol: .045 }), 900);
+          schedule(() => tone(480, 0, 70, { vol: .04 }), 1500);
+          [1800, 1980, 2160, 2340].forEach((t, i) => schedule(() => tone(600 + i * 50, 0, 45, { vol: .04 }), t));
+          schedule(() => {
+            tone(440, 0, 260, { vol: .06 });
+            tone(660, 60, 320, { vol: .05 });
+          }, Math.max(totalMs - 500, 3600));
+        }
+        function stopAll() {
+          timers.forEach(clearTimeout); timers = [];
+          if (humOsc) { try { humGain.gain.cancelScheduledValues(ctx.currentTime); humGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15); humOsc.stop(ctx.currentTime + 0.2); } catch (e) { } }
+        }
+        function setMuted(v) { muted = v; if (v) stopAll(); }
+        function unlock() { ensureCtx(); }
+        function playUnlock() {
+          if (muted) return;
+          tone(760, 0, 90, { vol: .05 });
+          tone(1040, 90, 130, { vol: .045 });
+        }
+        return { playBootSequence, stopAll, setMuted, unlock, playUnlock, isMuted: () => muted };
+      })();
+
+      /* ---------------- BOOT SEQUENCE ---------------- */
+      const bootScreen = document.getElementById('boot-screen');
+      const bootLog = document.getElementById('boot-log');
+      const desktop = document.getElementById('desktop');
+      const skipBtn = document.getElementById('skip-boot');
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const lines = [
+        { t: '> booting dev_environment.sys', cls: '' },
+        { t: '> loading components', cls: 'dim' },
+        { t: '> compiling interface', cls: 'dim' },
+        { t: '> mounting desktop... OK', cls: 'ok' },
+      ];
+
+      let bootDone = false;
+
+      function typeLine(line, cb) {
+        let i = 0;
+        const row = document.createElement('div');
+        if (line.cls) row.className = line.cls;
+        bootLog.appendChild(row);
+        const speed = reduceMotion ? 0 : 14;
+        function step() {
+          row.textContent = line.t.slice(0, i);
+          i++;
+          if (i <= line.t.length) {
+            setTimeout(step, speed);
+          } else {
+            cb();
+          }
+        }
+        step();
+      }
+
+      function runBootLog(idx) {
+        if (idx >= lines.length) return;
+        typeLine(lines[idx], () => runBootLog(idx + 1));
+      }
+
+      function finishBoot() {
+        if (bootDone) return;
+        bootDone = true;
+        bootScreen.classList.add('wipe');
+        if (window._stopBootRain) window._stopBootRain();
+        setTimeout(() => { bootScreen.style.display = 'none'; }, 700);
+      }
+
+      runBootLog(0);
+      const totalBootTime = reduceMotion ? 400 : 4600;
+
+      // occasional brief glitch flicker during boot
+      if (!reduceMotion) {
+        [1100, 2500, 3400].forEach(t => setTimeout(() => {
+          bootScreen.classList.add('glitch');
+          setTimeout(() => bootScreen.classList.remove('glitch'), 140);
+        }, t));
+      }
+
+      AudioEngine.playBootSequence(totalBootTime);
+      // browsers block audio without a gesture — arm it on first interaction as a fallback
+      ['pointerdown', 'keydown'].forEach(evt => window.addEventListener(evt, () => AudioEngine.unlock(), { once: true }));
+
+      const muteBtn = document.getElementById('mute-toggle');
+      muteBtn.addEventListener('click', () => {
+        const next = !AudioEngine.isMuted();
+        AudioEngine.setMuted(next);
+        muteBtn.textContent = next ? '🔇 MUTED' : '🔊 SOUND';
+      });
+
+      const bootTimer = setTimeout(finishBoot, totalBootTime);
+      skipBtn.addEventListener('click', () => {
+        clearTimeout(bootTimer);
+        AudioEngine.stopAll();
+        if (window._stopBootRain) window._stopBootRain();
+        finishBoot();
+      });
+
+      /* ---------------- CLOCK ---------------- */
+      function fmtTime() {
+        const d = new Date();
+        let h = d.getHours(), m = d.getMinutes();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12; if (h === 0) h = 12;
+        return h + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+      }
+      function fmtDate() {
+        const d = new Date();
+        return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase();
+      }
+      function tickClock() {
+        const t = fmtTime();
+        document.getElementById('tb-clock').textContent = t;
+        document.getElementById('tb-clock2').textContent = t;
+        const lc = document.getElementById('lock-clock');
+        const ld = document.getElementById('lock-date');
+        if (lc) lc.textContent = t;
+        if (ld) ld.textContent = fmtDate();
+      }
+      tickClock();
+      setInterval(tickClock, 15000);
+
+      /* ---------------- FOLDER ICON (shared svg) ---------------- */
+      function folderSVG() {
+        return `<svg viewBox="0 0 46 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 8C2 5.79086 3.79086 4 6 4H17L21 8H40C42.2091 8 44 9.79086 44 12V31C44 33.2091 42.2091 35 40 35H6C3.79086 35 2 33.2091 2 31V8Z"
+        fill="#f5a623" fill-opacity="0.14" stroke="#f5a623" stroke-width="1.6"/>
+      <path d="M2 13H44" stroke="#f5a623" stroke-width="1.2" stroke-opacity="0.5"/>
+    </svg>`;
+      }
+
+      const glyphs = {
+        about: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#f5a623" stroke-width="2"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/></svg>',
+        projects: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M14 6l-4 12" stroke="#f5a623" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        skills: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 8h16M4 8a2 2 0 100-4 2 2 0 000 4zM4 16h10M14 16a2 2 0 104 0 2 2 0 00-4 0zM4 8v8" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/><path d="M20 8v8" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/></svg>',
+        experience: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="8" width="18" height="12" rx="2" stroke="#f5a623" stroke-width="2"/><path d="M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2" stroke="#f5a623" stroke-width="2"/></svg>',
+        contact: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="#f5a623" stroke-width="2"/><path d="M3 7l9 6 9-6" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/></svg>',
+        entertainment: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0" stroke="#f5a623" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="7.5" r="1.3" fill="#f5a623"/></svg>'
+      };
+
+      /* ---------------- WINDOW CONTENT ---------------- */
+      /* ═══════════════════════════════════════════════════════════════
+         ✏️  EDIT ME — THIS IS THE ONLY BLOCK YOU NEED TO CHANGE
+         Everything the visitor reads (About/Projects/Skills/Experience/
+         Contact) lives in this one object. Replace [bracketed] text
+         with your real content. Don't touch the HTML tags/classes.
+         ═══════════════════════════════════════════════════════════════ */
+      const appContent = {
+        // ---- EDIT ME: About Me window ----
+        about: {
+          title: 'about_me',
+          body: `
+        <div class="win-eyebrow">// 01 — identity</div>
+        <div class="win-h1">Hi, I'm <span class="placeholder">Daniel C. Emenike</span> 👋</div>
+        <p class="win-p"><strong>FullStack Developer & Expert in AI Prompt Engineering</strong> based in <span class="placeholder">Ogbomoso, Oyo State </span>.I'm just a developer who genuinely enjoys learning how things work and building stuff that solves real problems. Right now, I'm growing into full-stack development, learning both frontend and backend with React, Angular, Firebase, Node.js, Express, and MongoDB, one step at a time.</p>
+        <p class="win-p">My goal is simple: keep getting better, build products that matter, and eventually create tech that makes a real impact.</p>
+        <p class="win-p">Currently exploring: <span class="placeholder">Node.js, Express, MongoDB, REST APIs.</span>.</p>
+      `
+        },
+
+
+        // ---- EDIT ME: Projects window — add/remove <div class="proj-card"> blocks below ----
+        projects: {
+          title: 'projects',
+          body: `
+        <div class="win-eyebrow">// 02 — selected work</div>
+        <div class="win-h1">Projects</div>
+        <div class="proj-card">
+          <h3>Afrivista Tourism<span style="color:var(--text-faint); font-weight:400;">(<a href="https://dcemenike.github.io/AFRIVISTA-TOURISM-/">Link here</a> )</span></h3>
+          <p>AfriVista is an interactive travel and tourism dashboard designed to streamline the planning and booking experience for African tours. The web application features user authentication, real-time weather integration, currency calculations, and a secure checkout system to help users seamlessly discover and purchase vacation packages.</p>
+              <span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">JAVASCRIPT</span>
+          <span class="tag">BOOTSTRAP</span><span class="tag">FIREBASE</span>
+        </div>
+
+        <div class="proj-card">
+          <h3>To-Do App <span style="color:var(--text-faint); font-weight:400;">(<a href="https://dcemenike.github.io/ToDO-aPP/">Link here</a> )</span></h3 >
+          <p>A full-featured to-do app built to practice CRUD operations and state management. It allows users to create, update, mark as complete, and remove tasks while maintaining a clean, responsive user experience.</p>
+          <span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">JAVASCRIPT</span>
+        </div>
+        
+        <div class="proj-card">
+          <h3>Basic Calculator<span style="color:var(--text-faint); font-weight:400;">(<a href="https://dcemenike.github.io/Basic-Calculator/">Link here</a> )</span></h3 >
+          <p>The basic calculator helps to run quick math evaluations seamlessly. It was a great opportunity for me to get my hands dirty with parameterized functions in JavaScript </p>
+          <span class="tag">HTML</span><span class="tag">BOOTSTRAP</span><span class="tag">JAVASCRIPT</span>
+        </div>
+
+          <div class="proj-card">
+            <h3>[Project Name]</h3>
+            <p>[Add as many project cards as you need — this list scrolls.]</p>
+            <span class="tag">[MongoDB]</span><span class="tag">[Express]</span>
+            </div>
+
+            <div class="proj-card">
+              <h3>BASIC ARITHMETIC TASKS <span style="color:var(--text-faint); font-weight:400;">(<a https://dcemenike.github.io/BASIC-ARITHMETIC-ASSIGNMENTS/">Link here</a>)</span></h3 >
+              <p>This file consists of a DISCOUNT CALCULATOR, a CHARACTER COUNTER, and UNIT CONVERTER. This was a form of practise for arithmetic operators in javascript</p>
+            </div>
+            `
+        },
+        // ---- EDIT ME: Skills window — edit the <span class="tag"> chips below ----
+        skills: {
+          title: 'skills',
+          body: `
+        <div class="win-eyebrow">// 03 — stack</div>
+        <div class="win-h1">Skills</div>
+        <div class="skill-group">
+          <h3>Languages</h3>
+          <span class="tag">JavaScript / TypeScript</span><span class="tag">HTML &amp; CSS</span>
+        </div>
+        <div class="skill-group">
+          <h3>Frameworks &amp; Libraries</h3>
+          <span class="tag">React</span><span class="tag">Next.js</span><span class="tag">Node.js</span>
+        </div>
+        <div class="skill-group">
+          <h3>Tools</h3>
+          <span class="tag">Git</span><span class="tag">Docker</span><span class="tag">Figma</span>
+        </div>
+        <p class="win-p" style="margin-top:6px;">[Edit these chips to match your real stack — group by however you think about your own skills.]</p>
+      `
+        },
+        // ---- EDIT ME: Experience window — one <div class="tl-item"> per role, most recent first ----
+        experience: {
+          title: 'experience',
+          body: `
+        <div class="win-eyebrow">// 04 — timeline</div>
+        <div class="win-h1">Experience</div>
+        <div class="tl-item">
+          <div class="tl-date">2024 — Now</div>
+          <div class="tl-body">
+            <h3>[Job Title]</h3>
+            <div class="role-sub">[Company Name]</div>
+            <p>[What you owned, shipped, or improved — one or two lines.]</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">2022 — 2024</div>
+          <div class="tl-body">
+            <h3>[Job Title]</h3>
+            <div class="role-sub">[Company Name]</div>
+            <p>[Same format — most recent first.]</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">2021 — 2022</div>
+          <div class="tl-body">
+            <h3>[Job Title / Internship]</h3>
+            <div class="role-sub">[Company Name]</div>
+            <p>[Add or remove entries as needed.]</p>
+          </div>
+        </div>
+      `
+        },
+        // ---- EDIT ME: Contact window — replace the mailto/GitHub/LinkedIn links below ----
+        contact: {
+          title: 'contact',
+          body: `
+        <div class="win-eyebrow">// 05 — reach out</div>
+        <div class="win-h1">Contact</div>
+        <a class="contact-line" href="mailto:you@example.com"><span class="prompt">$</span> open mail --to you@example.com</a>
+        <a class="contact-line" href="https://github.com/yourhandle" target="_blank" rel="noopener"><span class="prompt">$</span> open github.com/yourhandle</a>
+        <a class="contact-line" href="https://linkedin.com/in/yourhandle" target="_blank" rel="noopener"><span class="prompt">$</span> open linkedin.com/in/yourhandle</a>
+        <p class="win-p" style="margin-top:14px;">[Swap in your real email + profile links above.]</p>
+      `
+        },
+        // ---- No edits needed here — this powers the reptile animation below ----
+        entertainment: {
+          title: 'entertainment',
+          canvasApp: true,
+          body: `<canvas id="reptile-canvas"></canvas><div class="canvas-hint">// tracking: cursor — release to let it wander</div>`
+        }
+      };
+      // ═══ END OF EDITABLE CONTENT — everything below this line is functional code ═══
+
+      const appOrder = ['about', 'projects', 'skills', 'experience', 'contact', 'entertainment'];
+
+      /* ---------------- BUILD DESKTOP ICONS ---------------- */
+      const iconGrid = document.getElementById('icon-grid');
+      appOrder.forEach(id => {
+        const btn = document.createElement('button');
+        btn.className = 'folder-icon';
+        btn.setAttribute('aria-label', 'Open ' + appContent[id].title);
+        btn.innerHTML = `
+      <div class="icon-box">${folderSVG()}<span class="glyph">${glyphs[id]}</span></div>
+      <span class="label">${appContent[id].title}</span>
+    `;
+        btn.addEventListener('click', () => openWindow(id));
+        iconGrid.appendChild(btn);
+      });
+
+      /* ---------------- START MENU ---------------- */
+      const startBtn = document.getElementById('start-btn');
+      const startMenu = document.getElementById('start-menu');
+      startMenu.innerHTML = appOrder.map(id => `<button data-id="${id}">📁 ${appContent[id].title}</button>`).join('');
+      startBtn.addEventListener('click', () => startMenu.classList.toggle('open'));
+      startMenu.addEventListener('click', e => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        openWindow(b.dataset.id);
+        startMenu.classList.remove('open');
+      });
+      document.addEventListener('click', e => {
+        if (!startMenu.contains(e.target) && e.target !== startBtn) {
+          startMenu.classList.remove('open');
+        }
+      });
+
+      /* ---------------- WINDOW MANAGER ---------------- */
+      const windowsLayer = document.getElementById('windows-layer');
+      const taskPills = document.getElementById('task-pills');
+      const openWindows = {};
+      let zTop = 10;
+      let cascade = 0;
+
+      function focusWindow(id) {
+        zTop++;
+        Object.keys(openWindows).forEach(k => {
+          openWindows[k].el.classList.toggle('focused', k === id);
+        });
+        openWindows[id].el.style.zIndex = zTop;
+        Array.from(taskPills.children).forEach(p => p.classList.toggle('active', p.dataset.id === id));
+      }
+
+      function openWindow(id) {
+        if (openWindows[id]) {
+          openWindows[id].el.classList.remove('minimized');
+          focusWindow(id);
+          return;
+        }
+        const isMobile = window.innerWidth <= 720;
+        const data = appContent[id];
+        const el = document.createElement('div');
+        el.className = 'window';
+        el.dataset.id = id;
+
+        const w = isMobile ? window.innerWidth : (id === 'entertainment' ? 480 : 460);
+        const h = isMobile ? window.innerHeight - 96 : (id === 'entertainment' ? 360 : 380);
+        const left = isMobile ? 0 : 90 + (cascade * 28) % 220;
+        const top = isMobile ? 44 : 70 + (cascade * 24) % 160;
+        cascade++;
+
+        el.style.width = w + 'px';
+        el.style.height = h + 'px';
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+
+        el.innerHTML = `
+      <div class="window-titlebar">
+        <div class="window-title"><span class="path-prefix">~/</span>${data.title}</div>
+        <div class="window-controls">
+          <button class="win-btn min" aria-label="Minimize">─</button>
+          <button class="win-btn max" aria-label="Maximize">□</button>
+          <button class="win-btn close" aria-label="Close">×</button>
+        </div>
+      </div>
+      <div class="window-body${data.canvasApp ? ' canvas-body' : ''}">${data.body}</div>
+      <div class="resize-handle"></div>
+    `;
+        windowsLayer.appendChild(el);
+        addCorners(el);
+
+        let reptileCleanup = null;
+        if (data.canvasApp) {
+          const canvasEl = el.querySelector('#reptile-canvas');
+          reptileCleanup = initReptile(canvasEl);
+        }
+
+        const pill = document.createElement('button');
+        pill.className = 'task-pill';
+        pill.dataset.id = id;
+        pill.textContent = data.title;
+        pill.addEventListener('click', () => {
+          const w = openWindows[id];
+          if (w.el.classList.contains('minimized')) {
+            w.el.classList.remove('minimized');
+            focusWindow(id);
+          } else if (w.el.style.zIndex == zTop) {
+            w.el.classList.add('minimized');
+          } else {
+            focusWindow(id);
+          }
+        });
+        taskPills.appendChild(pill);
+
+        openWindows[id] = { el, pill, cleanup: reptileCleanup };
+        focusWindow(id);
+
+        el.addEventListener('mousedown', () => focusWindow(id));
+
+        // controls
+        el.querySelector('.close').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (openWindows[id] && openWindows[id].cleanup) openWindows[id].cleanup();
+          el.remove();
+          pill.remove();
+          delete openWindows[id];
+        });
+        el.querySelector('.min').addEventListener('click', (e) => {
+          e.stopPropagation();
+          el.classList.add('minimized');
+        });
+        let maximized = false;
+        let prevRect = null;
+        el.querySelector('.max').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!maximized) {
+            prevRect = { l: el.style.left, t: el.style.top, w: el.style.width, h: el.style.height };
+            el.style.left = '20px'; el.style.top = '56px';
+            el.style.width = 'calc(100% - 40px)'; el.style.height = 'calc(100% - 130px)';
+            maximized = true;
+          } else {
+            el.style.left = prevRect.l; el.style.top = prevRect.t;
+            el.style.width = prevRect.w; el.style.height = prevRect.h;
+            maximized = false;
+          }
+        });
+
+        if (!isMobile) {
+          makeDraggable(el, el.querySelector('.window-titlebar'));
+          makeResizable(el, el.querySelector('.resize-handle'));
+        }
+      }
+
+      function makeDraggable(el, handle) {
+        let dragging = false, sx = 0, sy = 0, ol = 0, ot = 0;
+        handle.addEventListener('pointerdown', e => {
+          if (e.target.closest('.win-btn')) return;
+          dragging = true;
+          sx = e.clientX; sy = e.clientY;
+          ol = el.offsetLeft; ot = el.offsetTop;
+          handle.setPointerCapture(e.pointerId);
+          focusWindow(el.dataset.id);
+        });
+        handle.addEventListener('pointermove', e => {
+          if (!dragging) return;
+          const nl = Math.max(0, ol + (e.clientX - sx));
+          const nt = Math.max(28, ot + (e.clientY - sy));
+          el.style.left = nl + 'px';
+          el.style.top = nt + 'px';
+        });
+        handle.addEventListener('pointerup', e => { dragging = false; });
+      }
+
+      function makeResizable(el, handle) {
+        let resizing = false, sx = 0, sy = 0, ow = 0, oh = 0;
+        handle.addEventListener('pointerdown', e => {
+          resizing = true;
+          sx = e.clientX; sy = e.clientY;
+          ow = el.offsetWidth; oh = el.offsetHeight;
+          handle.setPointerCapture(e.pointerId);
+          e.stopPropagation();
+        });
+        handle.addEventListener('pointermove', e => {
+          if (!resizing) return;
+          el.style.width = Math.max(280, ow + (e.clientX - sx)) + 'px';
+          el.style.height = Math.max(200, oh + (e.clientY - sy)) + 'px';
+        });
+        handle.addEventListener('pointerup', () => { resizing = false; });
+      }
+
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          const focused = Object.keys(openWindows).find(k => openWindows[k].el.classList.contains('focused'));
+          if (focused) {
+            if (openWindows[focused].cleanup) openWindows[focused].cleanup();
+            openWindows[focused].el.remove();
+            openWindows[focused].pill.remove();
+            delete openWindows[focused];
+          }
+        }
+      });
+
+      /* ---------------- REPTILE CHAIN CREATURE (entertainment app) ---------------- */
+      function initReptile(canvas) {
+        const ctx = canvas.getContext('2d');
+        let running = true;
+
+        function resize() {
+          canvas.width = Math.max(canvas.clientWidth, 10);
+          canvas.height = Math.max(canvas.clientHeight, 10);
+        }
+        resize();
+        const ro = new ResizeObserver(resize);
+        ro.observe(canvas);
+
+        // ---- body plan: head(0) - neck(1-3) - thorax/ribs(4-10) - abdomen(11-16) - tail(17-21) ----
+        const N = 22;
+        const HEAD = 0;
+        const THORAX = [4, 10];      // ribcage range
+        const ABDOMEN = [11, 16];    // belly range
+        const TAIL_START = 17;
+        const FRONT_LEG_AT = 5;      // shoulder
+        const BACK_LEG_AT = 14;      // hip
+        const segDist = 8;
+
+        const segs = Array.from({ length: N }, () => ({ x: canvas.width / 2, y: canvas.height / 2 }));
+        const lure = { x: canvas.width / 2, y: canvas.height / 2 };
+        let lureAngle = Math.random() * Math.PI * 2;
+        let pointerActive = false;
+        let px = canvas.width / 2, py = canvas.height / 2;
+
+        function onMove(e) {
+          const r = canvas.getBoundingClientRect();
+          px = e.clientX - r.left; py = e.clientY - r.top;
+          pointerActive = true;
+        }
+        function onLeave() { pointerActive = false; }
+        canvas.addEventListener('pointermove', onMove);
+        canvas.addEventListener('pointerdown', onMove);
+        canvas.addEventListener('pointerleave', onLeave);
+
+        function wander() {
+          lureAngle += (Math.random() - 0.5) * 0.4;
+          lure.x += Math.cos(lureAngle) * 1.6;
+          lure.y += Math.sin(lureAngle) * 1.6;
+          const m = 26;
+          if (lure.x < m) { lure.x = m; lureAngle = Math.PI - lureAngle; }
+          if (lure.x > canvas.width - m) { lure.x = canvas.width - m; lureAngle = Math.PI - lureAngle; }
+          if (lure.y < m) { lure.y = m; lureAngle = -lureAngle; }
+          if (lure.y > canvas.height - m) { lure.y = canvas.height - m; lureAngle = -lureAngle; }
+        }
+
+        // draws one bent (thigh -> shin -> foot) leg with three splayed toes
+        function drawLeg(originX, originY, tangent, side, legLen, phase) {
+          const swing = Math.sin(phase) * 0.35;
+          const thighAngle = Math.atan2(
+            Math.sin(tangent + Math.PI / 2) * side + Math.sin(tangent) * 0.5,
+            Math.cos(tangent + Math.PI / 2) * side + Math.cos(tangent) * 0.5
+          ) + swing * 0.5;
+          const thighLen = legLen * 0.52;
+          const kneeX = originX + Math.cos(thighAngle) * thighLen;
+          const kneeY = originY + Math.sin(thighAngle) * thighLen;
+
+          const shinAngle = thighAngle - (0.55 * side) + swing * 0.4;
+          const shinLen = legLen * 0.48;
+          const footX = kneeX + Math.cos(shinAngle) * shinLen;
+          const footY = kneeY + Math.sin(shinAngle) * shinLen;
+
+          ctx.strokeStyle = 'rgba(220,232,238,0.4)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(originX, originY);
+          ctx.lineTo(kneeX, kneeY);
+          ctx.lineTo(footX, footY);
+          ctx.stroke();
+
+          [-0.5, 0, 0.5].forEach(toeOffset => {
+            const ta = shinAngle + toeOffset;
+            const tx2 = footX + Math.cos(ta) * 5;
+            const ty2 = footY + Math.sin(ta) * 5;
+            ctx.beginPath();
+            ctx.moveTo(footX, footY);
+            ctx.lineTo(tx2, ty2);
+            ctx.strokeStyle = 'rgba(220,232,238,0.45)';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          });
+          ctx.beginPath();
+          ctx.arc(footX, footY, 1, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(220,232,238,0.6)';
+          ctx.fill();
+        }
+
+        const winEl = canvas.closest('.window');
+        let time = 0;
+
+        function frame() {
+          if (!running) return;
+          requestAnimationFrame(frame);
+          if (winEl && winEl.classList.contains('minimized')) return;
+          time++;
+
+          let tx, ty;
+          if (pointerActive) { tx = px; ty = py; }
+          else { wander(); tx = lure.x; ty = lure.y; }
+
+          segs[0].x += (tx - segs[0].x) * 0.12;
+          segs[0].y += (ty - segs[0].y) * 0.12;
+          for (let i = 1; i < N; i++) {
+            const dx = segs[i - 1].x - segs[i].x, dy = segs[i - 1].y - segs[i].y;
+            const d = Math.hypot(dx, dy) || 0.0001;
+            if (d > segDist) {
+              const ang = Math.atan2(dy, dx);
+              segs[i].x = segs[i - 1].x - Math.cos(ang) * segDist;
+              segs[i].y = segs[i - 1].y - Math.sin(ang) * segDist;
+            }
+          }
+
+          ctx.fillStyle = 'rgba(3,5,10,0.28)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          if (!pointerActive) {
+            ctx.beginPath();
+            ctx.arc(lure.x, lure.y, 2.2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(245,166,35,0.85)';
+            ctx.shadowColor = '#f5a623'; ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+
+          // ---- spine ----
+          ctx.beginPath();
+          ctx.moveTo(segs[0].x, segs[0].y);
+          for (let i = 1; i < N; i++) ctx.lineTo(segs[i].x, segs[i].y);
+          ctx.strokeStyle = 'rgba(220,232,238,0.5)';
+          ctx.lineWidth = 1;
+          ctx.shadowColor = 'rgba(77,216,230,0.6)';
+          ctx.shadowBlur = 4;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // ---- thorax: curved ribcage, longest ribs in the middle ----
+          for (let i = THORAX[0]; i <= THORAX[1]; i++) {
+            const prev = segs[i - 1], cur = segs[i], next = segs[i + 1] || cur;
+            const tangent = Math.atan2(next.y - prev.y, next.x - prev.x);
+            const perp = tangent + Math.PI / 2;
+            const t = (i - THORAX[0]) / (THORAX[1] - THORAX[0]);
+            const ribLen = 5 + Math.sin(t * Math.PI) * 9;
+            [1, -1].forEach(side => {
+              const cx = cur.x + Math.cos(tangent) * ribLen * 0.35;
+              const cy = cur.y + Math.sin(tangent) * ribLen * 0.35;
+              const ex = cur.x + Math.cos(perp) * ribLen * side;
+              const ey = cur.y + Math.sin(perp) * ribLen * side;
+              ctx.beginPath();
+              ctx.moveTo(cur.x, cur.y);
+              ctx.quadraticCurveTo(cx + Math.cos(perp) * ribLen * side * 0.6, cy + Math.sin(perp) * ribLen * side * 0.6, ex, ey);
+              ctx.strokeStyle = 'rgba(220,232,238,0.28)';
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            });
+          }
+
+          // ---- abdomen: small vertebra ticks ----
+          for (let i = ABDOMEN[0]; i <= ABDOMEN[1]; i++) {
+            const prev = segs[i - 1], cur = segs[i], next = segs[i + 1] || cur;
+            const tangent = Math.atan2(next.y - prev.y, next.x - prev.x);
+            const perp = tangent + Math.PI / 2;
+            [1, -1].forEach(side => {
+              const ex = cur.x + Math.cos(perp) * 3.2 * side;
+              const ey = cur.y + Math.sin(perp) * 3.2 * side;
+              ctx.beginPath();
+              ctx.moveTo(cur.x, cur.y);
+              ctx.lineTo(ex, ey);
+              ctx.strokeStyle = 'rgba(220,232,238,0.22)';
+              ctx.lineWidth = 0.7;
+              ctx.stroke();
+            });
+          }
+
+          // ---- tail: tapering dotted vertebrae ----
+          for (let i = TAIL_START; i < N; i++) {
+            const r = Math.max(0.4, 1.6 - (i - TAIL_START) * 0.28);
+            ctx.beginPath();
+            ctx.arc(segs[i].x, segs[i].y, r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(220,232,238,0.4)';
+            ctx.fill();
+          }
+
+          // ---- four legs: front pair + back pair, diagonal walking gait ----
+          const frontTangent = Math.atan2(segs[FRONT_LEG_AT + 1].y - segs[FRONT_LEG_AT - 1].y, segs[FRONT_LEG_AT + 1].x - segs[FRONT_LEG_AT - 1].x);
+          const backTangent = Math.atan2(segs[BACK_LEG_AT + 1].y - segs[BACK_LEG_AT - 1].y, segs[BACK_LEG_AT + 1].x - segs[BACK_LEG_AT - 1].x);
+          const gait = time * 0.12;
+          drawLeg(segs[FRONT_LEG_AT].x, segs[FRONT_LEG_AT].y, frontTangent, 1, 15, gait);
+          drawLeg(segs[FRONT_LEG_AT].x, segs[FRONT_LEG_AT].y, frontTangent, -1, 15, gait + Math.PI);
+          drawLeg(segs[BACK_LEG_AT].x, segs[BACK_LEG_AT].y, backTangent, 1, 14, gait + Math.PI);
+          drawLeg(segs[BACK_LEG_AT].x, segs[BACK_LEG_AT].y, backTangent, -1, 14, gait);
+
+          // ---- head: skull + eyes + snout ----
+          const headAngle = Math.atan2(segs[0].y - segs[1].y, segs[0].x - segs[1].x);
+          ctx.save();
+          ctx.translate(segs[HEAD].x, segs[HEAD].y);
+          ctx.rotate(headAngle);
+          ctx.beginPath();
+          ctx.ellipse(4, 0, 8, 4.2, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(220,232,238,0.55)';
+          ctx.lineWidth = 1;
+          ctx.shadowColor = '#4dd8e6'; ctx.shadowBlur = 6;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          ctx.moveTo(11, 0); ctx.lineTo(17, 0);
+          ctx.strokeStyle = 'rgba(220,232,238,0.5)';
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(6, -2.2, 1, 0, Math.PI * 2);
+          ctx.arc(6, 2.2, 1, 0, Math.PI * 2);
+          ctx.fillStyle = '#dce8ee';
+          ctx.shadowColor = '#4dd8e6'; ctx.shadowBlur = 6;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.restore();
+        }
+        requestAnimationFrame(frame);
+
+        return function cleanup() {
+          running = false;
+          ro.disconnect();
+          canvas.removeEventListener('pointermove', onMove);
+          canvas.removeEventListener('pointerdown', onMove);
+          canvas.removeEventListener('pointerleave', onLeave);
+        };
+      }
+
+      /* ---------------- 3D HOLOGRAM CUBE ---------------- */
+      (function initCube() {
+        const cube = document.getElementById('skill-cube');
+        if (!cube) return;
+        let rotX = -18, rotY = 25;
+        let velX = 0, velY = 0;
+        let dragging = false, lastX = 0, lastY = 0;
+        const idleSpeed = reduceMotionMQ ? 0 : 0.12;
+
+        function render() {
+          cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+        }
+        function frame() {
+          if (!dragging) {
+            if (Math.abs(velX) > 0.02 || Math.abs(velY) > 0.02) {
+              rotY += velX; rotX -= velY;
+              velX *= 0.95; velY *= 0.95;
+            } else {
+              rotY += idleSpeed;
+            }
+            render();
+          }
+          requestAnimationFrame(frame);
+        }
+        render();
+        requestAnimationFrame(frame);
+
+        cube.addEventListener('pointerdown', e => {
+          dragging = true; cube.classList.add('dragging');
+          lastX = e.clientX; lastY = e.clientY;
+          velX = 0; velY = 0;
+          cube.setPointerCapture(e.pointerId);
+        });
+        cube.addEventListener('pointermove', e => {
+          if (!dragging) return;
+          const dx = e.clientX - lastX, dy = e.clientY - lastY;
+          rotY += dx * 0.45; rotX -= dy * 0.45;
+          velX = dx * 0.45; velY = dy * 0.45;
+          lastX = e.clientX; lastY = e.clientY;
+          render();
+        });
+        function release() {
+          dragging = false;
+          cube.classList.remove('dragging');
+        }
+        cube.addEventListener('pointerup', release);
+        cube.addEventListener('pointercancel', release);
+      })();
+
+      /* ---------------- LOCK SCREEN ---------------- */
+      const lockScreen = document.getElementById('lock-screen');
+      let locked = true;
+
+      function unlockDesktop() {
+        if (!locked) return;
+        locked = false;
+        AudioEngine.playUnlock();
+        lockScreen.classList.add('unlocking');
+        setTimeout(() => {
+          lockScreen.style.display = 'none';
+          desktop.classList.add('visible');
+          setTimeout(() => openWindow('about'), 250);
+        }, 550);
+      }
+      lockScreen.addEventListener('click', unlockDesktop);
+      window.addEventListener('keydown', e => {
+        if (locked && bootDone) unlockDesktop();
+      });
+
+    })();
+  </script>
+</body>
+
+</html>
