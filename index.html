@@ -26,7 +26,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- EDIT ME: your name, shown as the browser tab title -->
-  <title>Daniel Emenike :: Portfolio OS</title>
+  <title>Daniel Chidera Emenike :: Software Engineer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
@@ -592,6 +592,34 @@
     .win-p strong {
       color: var(--text-primary);
       font-weight: 600;
+    }
+
+    .about-layout {
+      display: grid;
+      grid-template-columns: 170px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .profile-photo {
+      width: 170px;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      object-position: center;
+      border: 1px solid var(--border-bright);
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    @media (max-width: 560px) {
+      .about-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-photo {
+        width: min(220px, 70%);
+        margin: 0 auto;
+      }
     }
 
     .placeholder {
@@ -1747,10 +1775,16 @@
           title: 'about_me',
           body: `
         <div class="win-eyebrow">// 01 — identity</div>
-        <div class="win-h1">Hi, I'm <span class="placeholder">Daniel C. Emenike</span> 👋</div>
-        <p class="win-p"><strong>FullStack Developer & Expert in AI Prompt Engineering</strong> based in <span class="placeholder">Ogbomoso, Oyo State </span>.I'm a developer who genuinely enjoys learning how things work and building stuff that solves real problems. Right now, I'm growing into full-stack development, learning both frontend and backend with React, Angular, Firebase, Node.js, Express, and MongoDB, one step at a time.</p>
-        <p class="win-p">My goal is simple: keep getting better, build products that matter, and eventually create tech that makes a real impact.</p>
-        <p class="win-p">Currently exploring: <span class="placeholder">Node.js, Express, MongoDB, REST APIs.</span>.</p>
+        <div class="win-h1">Hi, I'm <span class="placeholder">Daniel Chidera Emenike</span> 👋</div>
+        <div class="about-layout">
+          <img class="profile-photo" src=".vscode/photo/portrait_.jpg" alt="Portrait of Daniel Chidera Emenike">
+          <div>
+            <p class="win-p"><strong>Software Engineer</strong> based in <span class="placeholder">Oyo State, Nigeria</span>.</p>
+            <p class="win-p">I am a results-driven Full Stack Software Engineer with practical experience developing responsive web applications using modern frontend and backend technologies.</p>
+            <p class="win-p">I build user interfaces, RESTful APIs, database-driven applications, and authentication flows. I enjoy solving real problems and developing scalable software solutions.</p>
+            <p class="win-p"><strong>Status:</strong> <span class="placeholder">Open to work</span></p>
+          </div>
+        </div>
       `
         },
 
@@ -1762,34 +1796,24 @@
         <div class="win-eyebrow">// 02 — selected work</div>
         <div class="win-h1">Projects</div>
         <div class="proj-card">
-          <h3>Afrivista Tourism<span style="color:var(--text-faint); font-weight:400;">(<a href="https://dcemenike.github.io/AFRIVISTA-TOURISM-/">Link here</a> )</span></h3>
-          <p>AfriVista is an interactive travel and tourism dashboard designed to streamline the planning and booking experience for African tours. The web application features user authentication, real-time weather integration, currency calculations, and a secure checkout system to help users seamlessly discover and purchase vacation packages.</p>
-              <span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">JAVASCRIPT</span>
-          <span class="tag">BOOTSTRAP</span><span class="tag">FIREBASE</span>
+          <h3>Campus360 <span style="color:var(--text-faint); font-weight:400;">(<a href="https://campus360restaurant.vercel.app/" target="_blank" rel="noopener">Live</a>)</span></h3>
+          <p>A MERN-stack cafeteria management application providing real-time meal availability updates and tools for administrators to manage cafeteria listings, improving meal accessibility and decision-making for students and staff.</p>
+          <a href="https://github.com/dcemenike/CAMPUS-360" target="_blank" rel="noopener" class="tag">GitHub: Campus360</a>
+          <a href="https://github.com/dcemenike/cafeteria-frontend" target="_blank" rel="noopener" class="tag">Frontend repo</a>
+          <span class="tag">MongoDB</span><span class="tag">Express</span><span class="tag">React</span><span class="tag">Node.js</span>
         </div>
 
         <div class="proj-card">
-          <h3>To-Do App <span style="color:var(--text-faint); font-weight:400;">(<a href="https://dcemenike.github.io/ToDO-aPP/">Link here</a> )</span></h3 >
-          <p>A full-featured to-do app built to practice CRUD operations and state management. It allows users to create, update, mark as complete, and remove tasks while maintaining a clean, responsive user experience.</p>
-          <span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">JAVASCRIPT</span>
+          <h3>StockWise Supermarket <span style="color:var(--text-faint); font-weight:400;">(<a href="https://stockwise-supermarket.vercel.app/" target="_blank" rel="noopener">Live</a>)</span></h3>
+          <p>A full-stack supermarket inventory management system with product management, real-time stock tracking, supplier management, inventory adjustments, analytics, and role-based authentication.</p>
+          <span class="tag">React</span><span class="tag">Node.js</span><span class="tag">Express</span><span class="tag">Prisma</span><span class="tag">PostgreSQL</span>
         </div>
-        
+
         <div class="proj-card">
-          <h3>Basic Calculator<span style="color:var(--text-faint); font-weight:400;">(<a href="https://dcemenike.github.io/Basic-Calculator/">Link here</a> )</span></h3 >
-          <p>The basic calculator helps to run quick math evaluations seamlessly. It was a great opportunity for me to get my hands dirty with parameterized functions in JavaScript </p>
-          <span class="tag">HTML</span><span class="tag">BOOTSTRAP</span><span class="tag">JAVASCRIPT</span>
+          <h3>AfriVista Tourism <span style="color:var(--text-faint); font-weight:400;">(<a href="https://dcemenike.github.io/AFRIVISTA-TOURISM-/" target="_blank" rel="noopener">Live</a>)</span></h3>
+          <p>A first major project built to expand and test my web development knowledge, using a tourism-focused interface with responsive Bootstrap layouts and Firebase integration.</p>
+          <span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">Bootstrap</span><span class="tag">JavaScript</span><span class="tag">Firebase</span>
         </div>
-
-          <div class="proj-card">
-            <h3>[Project Name]</h3>
-            <p>[Add as many project cards as you need — this list scrolls.]</p>
-            <span class="tag">[MongoDB]</span><span class="tag">[Express]</span>
-            </div>
-
-            <div class="proj-card">
-              <h3>BASIC ARITHMETIC TASKS <span style="color:var(--text-faint); font-weight:400;">(<a https://dcemenike.github.io/BASIC-ARITHMETIC-ASSIGNMENTS/">Link here</a>)</span></h3 >
-              <p>This file consists of a DISCOUNT CALCULATOR, a CHARACTER COUNTER, and UNIT CONVERTER. This was a form of practise for arithmetic operators in javascript</p>
-            </div>
             `
         },
         // ---- EDIT ME: Skills window — edit the <span class="tag"> chips below ----
@@ -1799,20 +1823,20 @@
         <div class="win-eyebrow">// 03 — stack</div>
         <div class="win-h1">Skills</div>
         <div class="skill-group">
-          <h3>Languages</h3>
-          <span class="tag">JavaScript</span><span class="tag">HTML &amp; CSS</span>
+          <h3>Languages &amp; Markup</h3>
+          <span class="tag">JavaScript</span><span class="tag">HTML5</span><span class="tag">CSS3</span>
         </div>
         <div class="skill-group">
           <h3>Frameworks &amp; Libraries</h3>
-          <span class="tag">React</span>><span class="tag">Node.js</span>
+          <span class="tag">React.js</span><span class="tag">Next.js</span><span class="tag">Bootstrap</span><span class="tag">Tailwind CSS</span>
         </div>
         <div class="skill-group">
-          <h3>Runtime Environments</h3>
-          <span class="tag">Express</span><span class="tag">Node.js</span>
+          <h3>Backend &amp; APIs</h3>
+          <span class="tag">Node.js</span><span class="tag">Express.js</span><span class="tag">REST API Development</span><span class="tag">Authentication</span><span class="tag">CRUD Operations</span>
         </div>
         <div class="skill-group">
-          <h3>Databases</h3>
-          <span class="tag">Git</span><span class="tag">MongoDB</span>
+          <h3>Databases &amp; Tools</h3>
+          <span class="tag">MongoDB</span><span class="tag">Firebase</span><span class="tag">PostgreSQL</span><span class="tag">Prisma</span><span class="tag">Git</span><span class="tag">GitHub</span><span class="tag">Responsive Web Design</span><span class="tag">Deployment</span>
         </div>
 
         <p class="win-p" style="margin-top:6px;"></p>
@@ -1825,26 +1849,26 @@
         <div class="win-eyebrow">// 04 — timeline</div>
         <div class="win-h1">Experience</div>
         <div class="tl-item">
-          <div class="tl-date">January,2026 — Now</div>
+          <div class="tl-date">Feb 2026 — Present</div>
           <div class="tl-body">
-            <h3>INTERN</h3>
-            <div class="role-sub">SQI COLLEGE OF ICT</div>
-            <p></p>
+            <h3>Full Stack Software Engineer</h3>
+            <div class="role-sub">SQICT</div>
+            <p>Building and maintaining full-stack web applications with modern frontend and backend technologies.</p>
           </div>
         </div>
         <div class="tl-item">
-          <div class="tl-date">2022 — 2024</div>
+          <div class="tl-date">Jan 2024 — Dec 2026</div>
           <div class="tl-body">
-            <h3>[Job Title]</h3>
-            <div class="role-sub">[Company Name]</div>
-            <p></p>
+            <h3>Professional Certificate in Software Engineering</h3>
+            <div class="role-sub">SQI College of ICT, Ogbomoso</div>
+            <p>Software engineering training focused on practical full-stack development.</p>
           </div>
         </div>
         <div class="tl-item">
-          <div class="tl-date">2021 — 2022</div>
+          <div class="tl-date">Oct 2018 — Dec 2024</div>
           <div class="tl-body">
-            <h3>[Job Title / Internship]</h3>
-            <div class="role-sub">[Company Name]</div>
+            <h3>B.Tech</h3>
+            <div class="role-sub">Ladoke Akintola University of Technology, Ogbomoso</div>
             <p></p>
           </div>
         </div>
@@ -1856,10 +1880,10 @@
           body: `
         <div class="win-eyebrow">// 05 — reach out</div>
         <div class="win-h1">Contact</div>
-        <a class="contact-line" href="mailto:you@example.com"><span class="prompt">$</span> open mail --to you@example.com</a>
-        <a class="contact-line" href="https://github.com/dcemenike?tab=following" target="_blank" rel="noopener"><span class="prompt">$</span> open github.com/yourhandle</a>
-        <a class="contact-line" href="https://linkedin.com/in/yourhandle" target="_blank" rel="noopener"><span class="prompt">$</span> open linkedin.com/in/yourhandle</a>
-        <p class="win-p" style="margin-top:14px;">[Swap in your real email + profile links above.]</p>
+        <a class="contact-line" href="mailto:chidanieldera@gmail.com"><span class="prompt">$</span> open mail --to chidanieldera@gmail.com</a>
+        <a class="contact-line" href="https://github.com/dcemenike" target="_blank" rel="noopener"><span class="prompt">$</span> open github.com/dcemenike</a>
+        <a class="contact-line" href="https://www.linkedin.com/in/daniel-chidera-emenike-09a441315" target="_blank" rel="noopener"><span class="prompt">$</span> open linkedin.com/in/daniel-chidera-emenike</a>
+        <p class="win-p" style="margin-top:14px;">Open to software engineering roles, freelance work, and impactful collaborations.</p>
       `
         },
         // ---- No edits needed here — this powers the reptile animation below ----
